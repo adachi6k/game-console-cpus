@@ -1,55 +1,71 @@
-let Engine = Matter.Engine,
-    Render = Matter.Render,
-    World = Matter.World,
-    Bodies = Matter.Bodies;
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-let engine;
-let world;
-let boxes = [];
-let ground;
+const GAME_OVER_HEIGHT = canvas.height * 0.1;
+const BOX_WIDTH = 50;
+const BOX_HEIGHT = 50;
 
-function setup() {
-    createCanvas(800, 600);
-    engine = Engine.create();
-    world = engine.world;
-    Engine.run(engine);
-    ground = Bodies.rectangle(400, height, 800, 20, { isStatic: true });
-    World.add(world, ground);
+let isGameOver = false;
+
+let box = {
+    x: canvas.width / 2 - BOX_WIDTH / 2,
+    y: GAME_OVER_HEIGHT,
+    width: BOX_WIDTH,
+    height: BOX_HEIGHT,
+    color: "blue"
+};
+
+function drawBox() {
+    ctx.fillStyle = box.color;
+    ctx.fillRect(box.x, box.y, box.width, box.height);
 }
 
-function mousePressed() {
-    boxes.push(new Box(mouseX, mouseY, random(10, 50), random(10, 50)));
+function drawGameOverLine() {
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, GAME_OVER_HEIGHT);
+    ctx.lineTo(canvas.width, GAME_OVER_HEIGHT);
+    ctx.stroke();
 }
 
-function draw() {
-    background(220);
-    for (let box of boxes) {
-        box.show();
-    }
-    fill(170);
-    noStroke();
-    rectMode(CENTER);
-    rect(ground.position.x, ground.position.y, width, 20);
-}
-
-class Box {
-    constructor(x, y, w, h) {
-        this.body = Bodies.rectangle(x, y, w, h);
-        this.w = w;
-        this.h = h;
-        World.add(world, this.body);
-    }
-
-    show() {
-        let pos = this.body.position;
-        let angle = this.body.angle;
-        push();
-        translate(pos.x, pos.y);
-        rotate(angle);
-        rectMode(CENTER);
-        fill(255);
-        stroke(0);
-        rect(0, 0, this.w, this.h);
-        pop();
+function checkGameOver() {
+    // ゲームオーバーの判定
+    if (box.y <= GAME_OVER_HEIGHT) {
+        isGameOver = true;
     }
 }
+
+canvas.addEventListener("mousemove", function(event) {
+    let rect = canvas.getBoundingClientRect();
+    let x = event.clientX - rect.left;
+
+    // マウスカーソルの位置に合わせてボックスのx座標を更新
+    box.x = x - BOX_WIDTH / 2;
+});
+
+canvas.addEventListener("click", function() {
+    if (!isGameOver) {
+        // ボックスの位置を初期位置にリセット
+        box.y = GAME_OVER_HEIGHT;
+    }
+});
+
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawBox();
+    drawGameOverLine();
+
+    checkGameOver();
+
+    if (isGameOver) {
+        ctx.fillStyle = "black";
+        ctx.font = "30px Arial";
+        ctx.fillText("GAME OVER", canvas.width / 2 - 100, canvas.height / 2);
+    } else {
+        requestAnimationFrame(gameLoop);
+    }
+}
+
+gameLoop();
